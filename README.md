@@ -1,13 +1,30 @@
 # Kubediff
 
-Kubediff is a command-line tool that detects differences between Kubernetes resources in different clusters using a dot path to identity the objects to be compared. 
+Kubediff is a powerful command-line tool designed to detect differences between Kubernetes resources across multiple clusters. Using a flexible dot-path syntax, it enables you to compare specific fields within Kubernetes objects efficiently.
+
+> ⚠️ **Note**: Kubediff is a pet project and has not been extensively tested. It may contain bugs or unexpected behavior. Use it at your own risk, and feel free to report any issues you encounter!
+
+With Kubediff, you can:
+
+- Compare container images, environment variables, and other fields.
+- Filter resources by namespaces, labels, and resource types.
+- Ignore missing resources or irrelevant fields for a cleaner comparison.
 
 ## Install
 
-```
+To install Kubediff locally, clone the repository, build the binary, and move it to a location in your $PATH:
+
+```bash
 git clone https://github.com/eduardodbr/kubediff
+cd kubediff
 go build -o kubediff cmd/kubediff/main.go
-mv kubediff /usr/local/bin/
+sudo mv kubediff /usr/local/bin/
+```
+
+Verify the installation:
+
+```bash
+kubediff --help
 ```
 
 ## Usage 
@@ -35,30 +52,46 @@ Flags:
 ## Examples
 
 ### Find different container images in deployments and statefulsets
-```
-kubediff --contexts staging,production --resources deployment,statefulset --namespaces monitoring --path "Spec.Template.Spec.Containers[*].Image"
+```bash
+kubediff --contexts staging,production \
+         --resources deployment,statefulset \
+         --namespaces monitoring \
+         --path "Spec.Template.Spec.Containers[*].Image"
 ```
 
 ### Find different deployment labels filtered by label
-```
-kubediff -c staging,production -r deployment -n monitoring --path "Labels" -l app=prometheus
+```bash
+kubediff -c staging,production \
+         -r deployment \
+         -n monitoring \
+         --path "Labels" \
+         -l app=prometheus
 ```
 
 ### Find different deployment labels in deployments that exist in both environments
-```
-kubediff -c dev,staging,production -r deployment -n monitoring --path "Labels" --ignore-non-existent
+
+```sh
+kubediff -c dev,staging,production \
+         -r deployment \
+         -n monitoring \
+         --path "Labels" \
+         --ignore-non-existent
 ```
 
-## Supported resources (more soon)
+## Supported resources
+
+Currently supported Kubernetes resources:
 
 - Deployment
 - Daemonset
 - Statefulset
 - Configmap
 
+Additional resources will be supported soon!
+
 ## Extra Commands
 
-Kubediff finds differences between resources using a single path and a generic approach. The following commands use the generic kubediff engine but parses the output in an opinionated way to provide better insights. 
+Kubediff's generic engine enables comparisons across any Kubernetes resource using dot-paths. However, for certain use cases, Kubediff provides opinionated commands that deliver better insights and formatted output.
 
 ## Images
 
@@ -84,8 +117,10 @@ Flags:
 
 #### Find the difference between images ignoring the container registry
 
-```
-kubediff images -c staging,production -n data --ignore-container-registry
+```bash
+kubediff images -c staging,production \
+                -n data \
+                --ignore-container-registry
 ```
 
 ## Envs
@@ -112,6 +147,8 @@ Flags:
 
 #### Find the difference between env vars ignoring some envs
 
-```
-kubediff envs -c staging,production -n data --ignore-env ENVIRONMENT,REGION
+```bash
+kubediff envs -c staging,production \
+              -n data \ 
+              --ignore-env ENVIRONMENT,REGION
 ```
