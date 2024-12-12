@@ -28,7 +28,7 @@ func CreateClients(kubeconfig string, contexts []string) (map[string]*kubernetes
 	return clients, nil
 }
 
-// CreateClients creates a kubernetes clientSet for the context provided in `context`. Uses
+// CreateClient creates a kubernetes clientSet for the context provided in `context`. Uses
 // the kubeconfig file provided by `kubeconfig`
 func CreateClient(kubeconfig, context string) (*kubernetes.Clientset, error) {
 	config, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(

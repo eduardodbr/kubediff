@@ -39,7 +39,6 @@ func NewImages() *cobra.Command {
 					log.Fatal(err)
 				}
 			}
-
 		},
 	}
 

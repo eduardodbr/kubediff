@@ -138,7 +138,7 @@ func logAndReturnErr(namespace, context, resourceType, message string) error {
 	return fmt.Errorf(message)
 }
 
-func printDifferences(kd *kubediff, namespace string, m map[string]map[string][]any) {
+func printDifferences(kd *kubediff, _ string, m map[string]map[string][]any) {
 	hasDiff := false
 	for resourceName, contextsMap := range m {
 		if processResourceDifferences(kd, resourceName, contextsMap) {
@@ -246,13 +246,13 @@ func getFieldValue(data interface{}, path string) (interface{}, error) {
 				}
 			}
 			return results, nil
-		} else {
-			// Normal struct field access
-			val = val.FieldByName(part)
-			if !val.IsValid() {
-				return nil, fmt.Errorf("field '%s' not found", part)
-			}
 		}
+		// Normal struct field access
+		val = val.FieldByName(part)
+		if !val.IsValid() {
+			return nil, fmt.Errorf("field '%s' not found", part)
+		}
+
 	}
 
 	return val.Interface(), nil

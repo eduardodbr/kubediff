@@ -39,7 +39,6 @@ func NewEnvs() *cobra.Command {
 					log.Fatal(err)
 				}
 			}
-
 		},
 	}
 
@@ -53,7 +52,7 @@ func NewEnvs() *cobra.Command {
 	return command
 }
 
-func printEnvDifferences(kd *kubediff, namespace string, m map[string]map[string][]any) {
+func printEnvDifferences(kd *kubediff, _ string, m map[string]map[string][]any) {
 	hasDiff := false
 	for resourceName, contexts := range m {
 		if processResourceEnvDifferences(kd, resourceName, contexts) {
