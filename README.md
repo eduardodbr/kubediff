@@ -1,14 +1,8 @@
 # Kubediff
 
-Kubediff is a powerful command-line tool designed to detect differences between Kubernetes resources across multiple clusters. Using a flexible dot-path syntax, it enables you to compare specific fields within Kubernetes objects efficiently.
+Kubediff is a command-line tool designed to detect differences between Kubernetes resources across multiple clusters. Using a flexible dot-path syntax, it enables you to compare specific fields within Kubernetes objects efficiently.
 
 > ⚠️ **Note**: Kubediff is a pet project and has not been extensively tested. It may contain bugs or unexpected behavior. Use it at your own risk, and feel free to report any issues you encounter!
-
-With Kubediff, you can:
-
-- Compare container images, environment variables, and other fields.
-- Filter resources by namespaces, labels, and resource types.
-- Ignore missing resources or irrelevant fields for a cleaner comparison.
 
 ## Install
 
