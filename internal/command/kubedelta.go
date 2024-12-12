@@ -48,7 +48,7 @@ func Newkubediff() *cobra.Command {
 				log.Fatalf("Error: failed to create kubernetes clients: %v", err)
 				return
 			}
-			if err := kd.findDifferences(cmd.Context(), clients, printGenericDifferences); err != nil {
+			if err := kd.findDifferences(cmd.Context(), clients, printDifferences); err != nil {
 				log.Fatal(err)
 			}
 		},
@@ -138,64 +138,77 @@ func logAndReturnErr(namespace, context, resourceType, message string) error {
 	return fmt.Errorf(message)
 }
 
-func printGenericDifferences(kd *kubediff, namespace string, m map[string]map[string][]any) {
+func printDifferences(kd *kubediff, namespace string, m map[string]map[string][]any) {
 	hasDiff := false
 	for resourceName, contextsMap := range m {
-		var header strings.Builder
-		var diffStr strings.Builder
-		resourceDiff := false
-		for i, context := range kd.contexts {
-			source, ok := contextsMap[context]
-			if !ok {
-				if !kd.ignoreNonExistent {
-					hasDiff = true
-					resourceDiff = true
-					header.WriteString(color.RedString(fmt.Sprintf("\tNot found in %s\n", context)))
-				}
-				continue
-			}
-
-			// compare current context with all other contexts
-			for j := i + 1; j < len(kd.contexts); j++ {
-				targetContext := kd.contexts[j]
-				target, ok := contextsMap[targetContext]
-				if !ok {
-					continue
-				}
-
-				if len(source) != len(target) {
-					hasDiff = true
-					resourceDiff = true
-					header.WriteString(color.RedString(fmt.Sprintf("\tDifferent number of elements in %s (%d) and %s (%d)\n", context, len(source), targetContext, len(target))))
-					continue
-				}
-
-				// Compare the two values
-				diffs := deep.Equal(source, target)
-				if diffs == nil {
-					continue
-				}
-
-				hasDiff = true
-				resourceDiff = true
-				diffStr.WriteString(fmt.Sprintf("\tDifference between %s and %s:\n\n", context, targetContext))
-				for _, diff := range diffs {
-					diffStr.WriteString(fmt.Sprintf("\t\t%v\n", diff))
-				}
-				diffStr.WriteString("\n")
-			}
-		}
-		if resourceDiff {
-			log.Warnf("Found differences for %s", color.HiYellowString(resourceName))
-			if str := header.String(); str != "" {
-				fmt.Printf("%s\n", str)
-			}
-			fmt.Printf("%s\n", diffStr.String())
+		if processResourceDifferences(kd, resourceName, contextsMap) {
+			hasDiff = true
 		}
 	}
 	if !hasDiff {
 		log.Info(color.GreenString("No differences found"))
 	}
+}
+
+func processResourceDifferences(kd *kubediff, resourceName string, contextsMap map[string][]any) bool {
+	var header, diffStr strings.Builder
+	resourceDiff := false
+	for i, context := range kd.contexts {
+		source, ok := contextsMap[context]
+		if !ok {
+			if !kd.ignoreNonExistent {
+				resourceDiff = true
+				header.WriteString(color.RedString(fmt.Sprintf("\tNot found in %s\n", context)))
+			}
+			continue
+		}
+
+		// compare current context with all other contexts
+		for j := i + 1; j < len(kd.contexts); j++ {
+			targetContext := kd.contexts[j]
+			target, ok := contextsMap[targetContext]
+			if !ok {
+				continue
+			}
+
+			headerDiff, containersDiff, hasDiff := compareElements(context, targetContext, source, target)
+			if hasDiff {
+				resourceDiff = true
+				header.WriteString(headerDiff)
+				diffStr.WriteString(containersDiff)
+			}
+		}
+	}
+	if resourceDiff {
+		log.Warnf("Found differences for %s", color.HiYellowString(resourceName))
+		if str := header.String(); str != "" {
+			fmt.Printf("%s\n", str)
+		}
+		fmt.Printf("%s\n", diffStr.String())
+	}
+	return resourceDiff
+}
+
+// Compare elements between two contexts and write differences
+func compareElements(sourceContext, targetContext string, source, target []any) (string, string, bool) {
+	var header, diffStr strings.Builder
+	if len(source) != len(target) {
+		header.WriteString(color.RedString(fmt.Sprintf("\tDifferent number of elements in %s (%d) and %s (%d)\n", sourceContext, len(source), targetContext, len(target))))
+		return header.String(), "", true
+	}
+
+	// Compare the two values
+	diffs := deep.Equal(source, target)
+	if diffs == nil {
+		return "", "", false
+	}
+
+	diffStr.WriteString(fmt.Sprintf("\tDifference between %s and %s:\n\n", sourceContext, targetContext))
+	for _, diff := range diffs {
+		diffStr.WriteString(fmt.Sprintf("\t\t%v\n", diff))
+	}
+	diffStr.WriteString("\n")
+	return header.String(), diffStr.String(), true
 }
 
 func getFieldValue(data interface{}, path string) (interface{}, error) {
